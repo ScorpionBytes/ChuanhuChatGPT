@@ -20,6 +20,7 @@ from enum import Enum
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.callbacks.manager import BaseCallbackManager
+from langchain.callbacks import get_openai_callback
 
 from typing import Any, Dict, List, Optional, Union
 
@@ -128,6 +129,7 @@ class ModelType(Enum):
     YuanAI = 6
     Minimax = 7
     ChuanhuAgent = 8
+    PaLM = 9
 
     @classmethod
     def get_type(cls, model_name: str):
@@ -151,6 +153,8 @@ class ModelType(Enum):
             model_type = ModelType.Minimax
         elif "川虎助理" in model_name_lower:
             model_type = ModelType.ChuanhuAgent
+        elif "palm" in model_name_lower:
+            model_type = ModelType.PaLM
         else:
             model_type = ModelType.Unknown
         return model_type
@@ -292,19 +296,21 @@ class BaseLLMModel:
             index = construct_index(self.api_key, file_src=files)
             status = i18n("总结完成")
             logging.info(i18n("生成内容总结中……"))
-            os.environ["OPENAI_API_KEY"] = self.api_key
-            from langchain.chains.summarize import load_summarize_chain
-            from langchain.prompts import PromptTemplate
-            from langchain.chat_models import ChatOpenAI
-            from langchain.callbacks import StdOutCallbackHandler
-            prompt_template = "Write a concise summary of the following:\n\n{text}\n\nCONCISE SUMMARY IN " + language + ":"
-            PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
-            llm = ChatOpenAI()
-            chain = load_summarize_chain(llm, chain_type="map_reduce", return_intermediate_steps=True, map_prompt=PROMPT, combine_prompt=PROMPT)
-            summary = chain({"input_documents": list(index.docstore.__dict__["_dict"].values())}, return_only_outputs=True)["output_text"]
-            print(i18n("总结") + f": {summary}")
-            chatbot.append([i18n("上传了")+str(len(files))+"个文件", summary])
-        return chatbot, status
+            with get_openai_callback() as cb:
+                os.environ["OPENAI_API_KEY"] = self.api_key
+                from langchain.chains.summarize import load_summarize_chain
+                from langchain.prompts import PromptTemplate
+                from langchain.chat_models import ChatOpenAI
+                from langchain.callbacks import StdOutCallbackHandler
+                prompt_template = "Write a concise summary of the following:\n\n{text}\n\nCONCISE SUMMARY IN " + language + ":"
+                PROMPT = PromptTemplate(template=prompt_template, input_variables=["text"])
+                llm = ChatOpenAI()
+                chain = load_summarize_chain(llm, chain_type="map_reduce", return_intermediate_steps=True, map_prompt=PROMPT, combine_prompt=PROMPT)
+                summary = chain({"input_documents": list(index.docstore.__dict__["_dict"].values())}, return_only_outputs=True)["output_text"]
+                print(i18n("总结") + f": {summary}")
+                chatbot.append([i18n("上传了")+str(len(files))+"个文件", summary])
+            logging.info(cb)
+        return gr.Files.update(), chatbot, status
 
     def prepare_inputs(self, real_inputs, use_websearch, files, reply_language, chatbot):
         fake_inputs = None
