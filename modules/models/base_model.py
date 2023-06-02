@@ -245,7 +245,7 @@ class BaseLLMModel:
         stream_iter = self.get_answer_stream_iter()
 
         if display_append:
-            display_append = "<hr>" +display_append
+            display_append = '\n\n<hr class="append-display no-in-raw" />' + display_append
         for partial_text in stream_iter:
             chatbot[-1] = (chatbot[-1][0], partial_text + display_append)
             self.all_token_counts[-1] += 1
@@ -344,10 +344,11 @@ class BaseLLMModel:
                 reference_results.append([result.description, result.url])
                 display_append.append(
                     # f"{idx+1}. [{domain_name}]({result['href']})\n"
-                    f"<li><a href=\"{result.url}\" target=\"_blank\">{domain_name}</a></li>\n"
+                    f'<a href="{result.url}" target="_blank">{idx+1}.&nbsp;{domain_name}</a>'
                 )
             reference_results = add_source_numbers(reference_results)
-            display_append = "<ol>\n\n" + "".join(display_append) + "</ol>"
+            # display_append = "<ol>\n\n" + "".join(display_append) + "</ol>"
+            display_append = '<div class = "source-a">' + "".join(display_append) + '</div>'
             real_inputs = (
                 replace_today(WEBSEARCH_PTOMPT_TEMPLATE)
                 .replace("{query}", real_inputs)
