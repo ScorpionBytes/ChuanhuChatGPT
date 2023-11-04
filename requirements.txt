@@ -1,4 +1,4 @@
-gradio==3.33.1
+gradio==3.34.0
 gradio_client==0.2.5
 pypinyin
 tiktoken
@@ -23,3 +23,5 @@ wikipedia
 google.generativeai
 openai
 unstructured
+numpy>=1.22.2 # not directly required, pinned by Snyk to avoid a vulnerability
+pillow>=10.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
