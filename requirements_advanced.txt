@@ -10,3 +10,4 @@ transformers_stream_generator
 einops
 optimum
 auto-gptq
+requests>=2.32.0 # not directly required, pinned by Snyk to avoid a vulnerability
